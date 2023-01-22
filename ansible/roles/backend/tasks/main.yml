@@ -1,0 +1,76 @@
+- name: install lxml
+  package:
+    name: 
+      - python3-lxml
+    state: latest
+    update_cache: yes
+
+- name: install openjdk
+  package:
+    name: 
+      - "{{ openjdk_package }}"
+    state: latest
+    update_cache: yes
+
+- name: Make sure we have a jarservice group
+  group:
+    name: "{{ backend_service_group }}"
+    state: present
+
+- name: add service user
+  user:
+    name: "{{ backend_service_user }}"
+    groups: "{{ backend_service_group }}"
+    create_home: no
+    state: present
+    shell: /sbin/nologin
+
+- name: Configuring sudoer access for jarservice
+  community.general.sudoers:
+    name: allow-all-sudo
+    state: present
+    user: "{{ backend_service_user }}"
+    commands: ALL
+    nopassword: true
+
+- name: create backend directory
+  file:
+    path: "{{ backend_lib_directory }}"
+    state: directory
+    owner: "{{ backend_service_user }}"
+    group: "{{ backend_service_group }}"
+    mode: 0775
+    recurse: yes
+
+- name: create report directory
+  file:
+    path: "{{ backend_report_directory }}"
+    state: directory
+    owner: "{{ backend_service_user }}"
+    group: "{{ backend_service_group }}"
+    mode: 0775
+    recurse: yes
+
+- name: download backend artifacts
+  maven_artifact:
+    dest: "/opt/sausage-store/backend/lib/sausage-store.jar"
+    repository_url: "{{ backend_repository_url }}"
+    group_id: "com.yandex.practicum.devops"
+    artifact_id: "sausage-store"
+    username: std-012-030
+    password: 5Sb343pi
+
+- name: backend service template
+  template:
+    src: sausage-store-backend.service.j2
+    dest: /etc/systemd/system/sausage-store-backend.service
+    owner: "{{ backend_service_user }}"
+    group: "{{ backend_service_group }}"
+    mode: 0744
+  notify: daemon_reload
+
+- name: start backend
+  service:
+    name: sausage-store-backend
+    state: started
+    enabled: true

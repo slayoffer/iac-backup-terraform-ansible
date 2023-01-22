@@ -1,0 +1,20 @@
+[Unit]
+Description=Sausage store front-end job
+After=syslog.target
+After=network.target
+
+[Service]
+SuccessExitStatus=143
+User=www-data
+Type=simple
+WorkingDirectory= /var/www-data
+ExecStart=/usr/local/bin/http-server ./dist/frontend/ -p 80 --proxy http://localhost:8080
+ExecStop=/bin/kill -9 $MAINPID
+StandardOutput=append:{{ backend_report_directory }}/out-front.log
+StandardError=append:{{ backend_report_directory }}/error-front.log
+Restart=always
+RestartSec=5s
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

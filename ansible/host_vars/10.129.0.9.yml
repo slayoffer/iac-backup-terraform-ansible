@@ -1,0 +1,13 @@
+backend_service_user: jarservice
+frontend_service_user: www-data
+backend_service_group: jarservice
+frontend_service_group: www-data
+nexus_user: std-012-030
+nexus_password: 5Sb343pi
+backend_repository_url: https://nexus.praktikum-services.ru/repository/sausage-store-anton-evseev-backend
+frontend_repository_url: https://nexus.praktikum-services.ru/repository/sausage-store-anton-evseev-frontend
+artifact_version: 1.0.357393
+backend_report_directory: /opt/sausage-store/reports
+backend_lib_directory: /opt/sausage-store/backend/lib
+frontend_lib_directory: /var/www-data/dist
+openjdk_package: openjdk-16-jdk

@@ -1,0 +1,106 @@
+- name: add nodejs apt key
+  apt_key:
+    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    state: present
+
+- name: add nodejs ppa for apt repo
+  apt_repository:
+    repo: deb https://deb.nodesource.com/node_19.x focal main
+    update_cache: yes
+
+- name: install nodejs
+  apt:
+    update_cache: yes
+    name: nodejs
+    state: present
+
+- name: install npm
+  package:
+    name: 
+      - npm
+    state: latest
+    update_cache: yes
+
+- name: install http-server
+  community.general.npm:
+    name: http-server
+    global: true
+    state: latest
+
+- name: Make sure we have a www-data group
+  group:
+    name: "{{ frontend_service_group }}"
+    state: present
+
+- name: add service user
+  user:
+    name: "{{ frontend_service_user }}"
+    groups: "{{ frontend_service_group }}"
+    create_home: no
+    state: present
+    shell: /sbin/nologin
+
+- name: Configuring sudoer access for www-data
+  community.general.sudoers:
+    name: allow-all-sudo
+    state: present
+    user: "{{ frontend_service_user }}"
+    commands: ALL
+    nopassword: true
+
+- name: create frontend directory
+  file:
+    path: "{{ frontend_lib_directory }}"
+    state: directory
+    owner: "{{ frontend_service_user }}"
+    group: "{{ frontend_service_group }}"
+    mode: 0775
+    recurse: yes
+
+- name: download frontend artifacts
+  ansible.builtin.get_url:
+    url: "{{ frontend_repository_url }}/{{ artifact_version }}/sausage-store-{{ artifact_version }}.tar.gz"
+    dest: "/tmp/sausage-store.tar.gz"
+    username: "{{ nexus_user }}"
+    password: "{{ nexus_password }}"
+
+# - name: download frontend artifacts
+#   maven_artifact:
+#     dest: "/tmp/sausage-store.tar.gz"
+#     repository_url: "{{ frontend_repository_url }}"
+#     group_id: "com.yandex.practicum.devops"
+#     artifact_id: "sausage-store"
+#     username: "{{ nexus_user }}"
+#     password: "{{ nexus_password }}"
+
+# - name: install unzip
+#   package:
+#     name: unzip
+
+- name: unzip frontend
+  unarchive:
+    src: /tmp/sausage-store.tar.gz
+    dest: /var/www-data/dist
+    remote_src: yes
+    mode: 0755
+    owner: "{{ frontend_service_user }}"
+    group: "{{ frontend_service_group }}"
+
+# - name: install packages based on package.json
+#   community.general.npm:
+#     path: /var/www-data/dist/frontend
+
+- name: frontend service template
+  template:
+    src: sausage-store-frontend.service.j2
+    dest: /etc/systemd/system/sausage-store-frontend.service
+    owner: "{{ frontend_service_user }}"
+    group: "{{ frontend_service_group }}"
+    mode: 0744
+  notify: daemon_reload
+
+- name: start frontend
+  service:
+    name: sausage-store-frontend
+    state: started
+    enabled: true

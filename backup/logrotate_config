@@ -1,0 +1,13 @@
+/opt/log/sausage-store* {
+    su student student
+    hourly
+    rotate 3
+    size=10M
+    dateext
+    missingok
+    delaycompress
+    compress
+    postrotate
+                grep opt/log/sausage-store* /var/lib/logrotate/status >> /opt/student_rotate.log
+    endscript
+}

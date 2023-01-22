@@ -1,0 +1,21 @@
+[Unit]
+Description=Sausage-store
+After=syslog.target
+After=network.target
+
+[Service]
+User={{ backend_service_user }}
+Type=simple
+Environment=REPORT_PATH={{ backend_report_directory }}
+Environment=LOG_PATH={{ backend_report_directory }}
+StandardOutput=file:{{ backend_report_directory }}/out.log
+StandardError=file:{{ backend_report_directory }}/error.log
+Restart=always
+RestartSec=5s
+
+ExecStart=/usr/bin/java -Xrs -jar {{ backend_lib_directory }}/sausage-store.jar
+ExecStop=/bin/kill -9 $MAINPID
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target 
