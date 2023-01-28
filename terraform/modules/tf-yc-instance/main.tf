@@ -25,6 +25,6 @@ resource "yandex_compute_instance" "vm-1" {
     }
 
     metadata = {
-        user-data = "${file("~/infrastructure/terraform/meta.txt")}"
+        user-data = "${file("../../meta.yml")}"
     }
 }
